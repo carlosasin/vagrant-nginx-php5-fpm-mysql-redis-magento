@@ -12,6 +12,8 @@ DB user: project_user
 
 DB pass: supersecurepass
 
+Optional magento sample data installation:
+Set SAMPLE_DATA=false to disable the sample data installation
 
 ## #Fix user magneto admin
 
