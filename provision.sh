@@ -5,6 +5,12 @@ DOMAIN=www.project.local
 DBNAME=project_name
 DBUSER=project_user
 DBPASSWD=supersecurepass
+NAMEADMIN=John
+LASTNAMEADMIN=Doe
+EMAILADMIN=john@doe.com
+USERNAMEADMIN=admin
+PASSWORDADMIN=secret
+
 SAMPLE_DATA=true
 
 # set locale
@@ -72,7 +78,7 @@ echo -e "\n--- Download Magento ---\n"
 wget http://www.magentocommerce.com/downloads/assets/1.9.1.1/magento-1.9.1.1.tar.gz > /dev/null 2>&1
 echo -e "\n--- Install Magento ---\n"
 tar xzf magento-1.9.1.1.tar.gz > /dev/null 2>&1
-sudo mv magento/* /var/www/project/ > /dev/null 2>&1
+sudo mv magento/* magento/.htaccess magento/.htaccess.sample /var/www/project/ > /dev/null 2>&1
 sudo cp /var/www/Vagrant-config/local.xml /var/www/project/app/etc/ > /dev/null 2>&1
 mysql -u$DBUSER -p$DBPASSWD $DBNAME < /var/www/db/database.sql > /dev/null 2>&1
 
@@ -84,6 +90,16 @@ if [ "$SAMPLE_DATA" = true ] ; then
     sudo cp -R magento-sample-data-1.9.1.0/media /var/www/project/ > /dev/null 2>&1
     sudo cp -R magento-sample-data-1.9.1.0/skin /var/www/project/ > /dev/null 2>&1
     mysql -u$DBUSER -p$DBPASSWD $DBNAME < magento-sample-data-1.9.1.0/magento_sample_data_for_1.9.1.0.sql
+    echo -e "\n--- Create Magento Admin and assign Role ---\n"
+    mysql -u$DBUSER -p$DBPASSWD $DBNAME -e "insert into admin_user select (select max(user_id) + 1 from admin_user) user_id, 
+    										'$NAMEADMIN' firstname, '$LASTNAMEADMIN' lastname, '$EMAILADMIN' email, '$USERNAMEADMIN' username,
+    										MD5('$PASSWORDADMIN') password, now() created, NULL modified,
+    										NULL logdate, 0 lognum, 0 reload_acl_flag, 1 is_active, (select max(extra) 
+    										from admin_user where extra is not null) extra, NULL, NULL, NULL, NULL, NULL;"
+	mysql -u$DBUSER -p$DBPASSWD $DBNAME -e "insert into admin_role select (select max(role_id) + 1 from admin_role) role_id,
+											(select role_id from admin_role where role_name = 'Administrators') parent_id,
+											2 tree_level, 0 sort_order, 'U' role_type, (select user_id from admin_user where username = '$USERNAMEADMIN') user_id,
+											'admin' role_name, 0 gws_is_all, '' gws_websites, '' gws_store_groups;"
     sudo chown -R www-data:www-data /var/www/project > /dev/null 2>&1
 else
     sudo chown -R www-data:www-data /var/www/project > /dev/null 2>&1
